@@ -79,12 +79,12 @@ bool PlanPowX(ExecPlan& execPlan)
         auto& rtcKernel = node->compiledKernel.get();
         if(rtcKernel)
         {
-            gp.b_x   = rtcKernel->gridDim.x;
-            gp.b_y   = rtcKernel->gridDim.y;
-            gp.b_z   = rtcKernel->gridDim.z;
-            gp.wgs_x = rtcKernel->blockDim.x;
-            gp.wgs_y = rtcKernel->blockDim.y;
-            gp.wgs_z = rtcKernel->blockDim.z;
+            gp.gridDimX   = rtcKernel->gridDim.x;
+            gp.gridDimY   = rtcKernel->gridDim.y;
+            gp.gridDimZ   = rtcKernel->gridDim.z;
+            gp.blockDimX = rtcKernel->blockDim.x;
+            gp.blockDimY = rtcKernel->blockDim.y;
+            gp.blockDimZ = rtcKernel->blockDim.z;
         }
         node->SetupGridParam(gp);
 
@@ -118,8 +118,8 @@ bool GetTuningKernelInfo(ExecPlan& execPlan)
         {
             // if queried occupancy = 0, which is very likely that this kernel
             // can't be loaded
-            if(!localCompiledKernel->get_occupancy(
-                   {gp.wgs_x, gp.wgs_y, gp.wgs_z}, gp.lds_bytes, occupancy)
+            blockDim3 bdim(gp.blockDimX, gp.blockDimY, gp.blockDimZ);
+            if(!localCompiledKernel->get_occupancy(bdim, gp.lds_bytes, occupancy)
                || occupancy == 0)
                 occupancy = -1;
         }
@@ -154,7 +154,7 @@ bool GetTuningKernelInfo(ExecPlan& execPlan)
         tuningPacket->globalRW_per_thread[i]
             = (scheme == CS_KERNEL_2D_SINGLE) ? (lengths[0] * lengths[1]) / config.workgroup_size
                                               : -1;
-        tuningPacket->num_of_blocks[i] = gp.b_x;
+        tuningPacket->num_of_blocks[i] = gp.gridDimX;
         tuningPacket->lds_bytes[i]     = gp.lds_bytes;
         tuningPacket->occupancy[i]     = occupancy;
         tuningPacket->wgs[i]           = config.workgroup_size;

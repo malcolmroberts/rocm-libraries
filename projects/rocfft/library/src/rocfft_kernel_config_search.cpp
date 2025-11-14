@@ -256,7 +256,7 @@ float launch_kernel(RTCKernel&             kernel,
 
         if(hipEventRecord(data.start) != hipSuccess)
             throw std::runtime_error("hipEventRecord start failed");
-        kernel.launch(kargs, {blocks}, {wgs}, lds_bytes, prop);
+        kernel.launch(kargs, gridDim3(wgs), blockDim3(blocks), lds_bytes, prop);
         if(hipEventRecord(data.stop) != hipSuccess)
             throw std::runtime_error("hipEventRecord stop failed");
         if(hipEventSynchronize(data.stop) != hipSuccess)

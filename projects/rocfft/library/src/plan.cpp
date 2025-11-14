@@ -1146,14 +1146,16 @@ std::unique_ptr<ExecPlan> transpose_brick(int                        local_comm_
     // grid params are set during runtime compilation, put them on
     // the execPlan so they're known at exec time
     auto& gp       = execPlan.gridParam.emplace_back();
-    dim3  gridDim  = execPlan.execSeq.front()->compiledKernel.get()->gridDim;
-    dim3  blockDim = execPlan.execSeq.front()->compiledKernel.get()->blockDim;
-    gp.b_x         = gridDim.x;
-    gp.b_y         = gridDim.y;
-    gp.b_z         = gridDim.z;
-    gp.wgs_x       = blockDim.x;
-    gp.wgs_y       = blockDim.y;
-    gp.wgs_z       = blockDim.z;
+    gridDim3  gridDim  = execPlan.execSeq.front()->compiledKernel.get()->gridDim;
+    blockDim3  blockDim = execPlan.execSeq.front()->compiledKernel.get()->blockDim;
+    
+    gp.gridDimX         = gridDim.x;
+    gp.gridDimY         = gridDim.y;
+    gp.gridDimZ         = gridDim.z;
+
+    gp.blockDimX       = blockDim.x;
+    gp.blockDimY       = blockDim.y;
+    gp.blockDimZ       = blockDim.z;
 
     return execPlanMultiItem;
 }
@@ -4990,9 +4992,10 @@ void PrintNode(rocfft_ostream& os, const ExecPlan& execPlan, const int indent)
     os << indentStr << "GridParams\n";
     for(const auto& gp : execPlan.gridParam)
     {
-        os << indentStr << "  b[" << gp.b_x << "," << gp.b_y << "," << gp.b_z << "] wgs["
-           << gp.wgs_x << "," << gp.wgs_y << "," << gp.wgs_z << "], dy_lds bytes " << gp.lds_bytes
-           << "\n";
+        os << indentStr
+           << "  blockDim[" << gp.blockDimX << "," << gp.blockDimY << "," << gp.blockDimZ << "]"
+           << " gridDim[" << gp.gridDimX << "," << gp.gridDimY << "," << gp.gridDimZ << "], "
+           << "dy_lds bytes " << gp.lds_bytes << "\n";
     }
     os << indentStr << "End GridParams\n";
 

@@ -66,18 +66,18 @@ enum FuseType
 
 struct GridParam
 {
-    unsigned int b_x, b_y, b_z; // in HIP, the data type of dimensions of work
+    unsigned int blockDimX, blockDimY, blockDimZ; // in HIP, the data type of dimensions of work
     // items, work groups is unsigned int
-    unsigned int wgs_x, wgs_y, wgs_z;
+    unsigned int gridDimX, gridDimY, gridDimZ;
     unsigned int lds_bytes; // dynamic LDS allocation size
 
     GridParam()
-        : b_x(1)
-        , b_y(1)
-        , b_z(1)
-        , wgs_x(1)
-        , wgs_y(1)
-        , wgs_z(1)
+        : blockDimX(1)
+        , blockDimY(1)
+        , blockDimZ(1)
+        , gridDimX(1)
+        , gridDimY(1)
+        , gridDimZ(1)
         , lds_bytes(0)
     {
     }

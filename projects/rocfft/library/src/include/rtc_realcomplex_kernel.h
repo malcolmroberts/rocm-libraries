@@ -27,8 +27,8 @@ struct RTCKernelRealComplex : public RTCKernel
 {
     RTCKernelRealComplex(const std::string&       kernel_name,
                          const std::vector<char>& code,
-                         dim3                     gridDim,
-                         dim3                     blockDim)
+                         gridDim3                     gridDim,
+                         blockDim3                     blockDim)
         : RTCKernel(kernel_name, code, gridDim, blockDim)
     {
     }
@@ -45,8 +45,8 @@ struct RTCKernelRealComplexEven : public RTCKernel
     RTCKernelRealComplexEven(const std::string&       kernel_name,
                              size_t                   half_N,
                              const std::vector<char>& code,
-                             dim3                     gridDim,
-                             dim3                     blockDim)
+                             gridDim3                     gridDim,
+                             blockDim3                     blockDim)
         : RTCKernel(kernel_name, code, gridDim, blockDim)
         , half_N(half_N)
     {
@@ -64,8 +64,8 @@ struct RTCKernelRealComplexEvenTranspose : public RTCKernel
 {
     RTCKernelRealComplexEvenTranspose(const std::string&       kernel_name,
                                       const std::vector<char>& code,
-                                      dim3                     gridDim,
-                                      dim3                     blockDim)
+                                      gridDim3                     gridDim,
+                                      blockDim3                     blockDim)
         : RTCKernel(kernel_name, code, gridDim, blockDim)
     {
     }
@@ -81,8 +81,8 @@ struct RTCKernelApplyCallback : public RTCKernel
 {
     RTCKernelApplyCallback(const std::string&       kernel_name,
                            const std::vector<char>& code,
-                           dim3                     gridDim,
-                           dim3                     blockDim)
+                           gridDim3                     gridDim,
+                           blockDim3                     blockDim)
         : RTCKernel(kernel_name, code, gridDim, blockDim)
     {
     }

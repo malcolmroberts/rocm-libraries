@@ -36,8 +36,8 @@
 
 RTCKernel::RTCKernel(const std::string&       kernel_name,
                      const std::vector<char>& code,
-                     dim3                     gridDim,
-                     dim3                     blockDim)
+                     gridDim3                     gridDim,
+                     blockDim3                     blockDim)
     : gridDim(gridDim)
     , blockDim(blockDim)
     , kernel_name(kernel_name)
@@ -61,9 +61,12 @@ void RTCKernel::launch(DeviceCallIn& data, const hipDeviceProp_t& deviceProp)
 
     const auto& gp = data.gridParam;
 
+    gridDim3 gridDim(gp.gridDimX, gp.gridDimY, gp.gridDimZ);
+    blockDim3 blockDim(gp.blockDimX, gp.blockDimY, gp.blockDimZ);
+    
     launch(kargs,
-           {gp.b_x, gp.b_y, gp.b_z},
-           {gp.wgs_x, gp.wgs_y, gp.wgs_z},
+           gridDim,
+           blockDim,
            gp.lds_bytes,
            deviceProp,
            data.rocfft_stream);
@@ -71,8 +74,8 @@ void RTCKernel::launch(DeviceCallIn& data, const hipDeviceProp_t& deviceProp)
 #endif
 
 void RTCKernel::launch(RTCKernelArgs&         kargs,
-                       dim3                   gridDim,
-                       dim3                   blockDim,
+                       gridDim3               gridDim,
+                       blockDim3              blockDim,
                        unsigned int           lds_bytes,
                        const hipDeviceProp_t& deviceProp,
                        hipStream_t            stream)
@@ -114,7 +117,7 @@ void RTCKernel::launch(RTCKernelArgs&         kargs,
         throw std::runtime_error("hipModuleLaunchKernel failure");
 }
 
-bool RTCKernel::get_occupancy(dim3 blockDim, unsigned int lds_bytes, int& occupancy)
+bool RTCKernel::get_occupancy(blockDim3 blockDim, unsigned int lds_bytes, int& occupancy)
 {
     hipError_t ret = hipModuleOccupancyMaxActiveBlocksPerMultiprocessor(
         &occupancy, kernel, blockDim.x * blockDim.y * blockDim.z, lds_bytes);

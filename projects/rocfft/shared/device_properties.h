@@ -26,6 +26,32 @@
 #include <stdexcept>
 #include <string>
 
+// Helper structs for type-checking gridDim/blockDim argument ordering
+struct gridDim3
+{
+    uint x;
+    uint y;
+    uint z;
+    
+    gridDim3(): x(1), y(1), z(1){};
+    gridDim3(int x1): x(x1), y(1), z(1){};
+    gridDim3(int x1, int y1): x(x1), y(y1), z(1){};
+    gridDim3(int x1, int y1, int z1): x(x1), y(y1), z(z1){};
+};
+
+struct blockDim3
+{
+    uint x;
+    uint y;
+    uint z;
+    
+    blockDim3(): x(1), y(1), z(1){};
+    blockDim3(int x1): x(x1), y(1), z(1){};
+    blockDim3(int x1, int y1): x(x1), y(y1), z(1){};
+    blockDim3(int x1, int y1, int z1): x(x1), y(y1), z(z1){};
+};
+
+
 // get device properties
 static hipDeviceProp_t get_curr_device_prop()
 {
@@ -45,8 +71,8 @@ static hipDeviceProp_t get_curr_device_prop()
 // the device properties.  throws std::runtime_error if the limits
 // are exceeded.
 static void launch_limits_check(const std::string&     kernel_name,
-                                const dim3             gridDim,
-                                const dim3             blockDim,
+                                const gridDim3             gridDim,
+                                const blockDim3             blockDim,
                                 const hipDeviceProp_t& deviceProp)
 {
     // Need lots of casting here because dim3 is unsigned but device

@@ -46,10 +46,7 @@ RTCKernel::RTCGenerator RTCKernelRealComplex::generate_from_node(const LeafNode&
         input_size = node.outputLength[0] / 2 + 1;
 
     size_t elems = product(node.length.begin() + 1, node.length.end()) * input_size * node.batch;
-    generator.gridDim
-        = {static_cast<unsigned int>(DivRoundingUp<size_t>(elems, LAUNCH_BOUNDS_R2C_C2R_KERNEL)),
-           1,
-           1};
+    generator.gridDim.x = static_cast<unsigned int>(DivRoundingUp<size_t>(elems, LAUNCH_BOUNDS_R2C_C2R_KERNEL));
     generator.blockDim = {LAUNCH_BOUNDS_R2C_C2R_KERNEL, 1, 1};
 
     RealComplexSpecs specs{node.scheme,
@@ -68,8 +65,8 @@ RTCKernel::RTCGenerator RTCKernelRealComplex::generate_from_node(const LeafNode&
 
     generator.construct_rtckernel = [=](const std::string&       kernel_name,
                                         const std::vector<char>& code,
-                                        dim3                     gridDim,
-                                        dim3                     blockDim) {
+                                        gridDim3                     gridDim,
+                                        blockDim3                     blockDim) {
         return std::unique_ptr<RTCKernel>(
             new RTCKernelRealComplex(kernel_name, code, gridDim, blockDim));
     };
@@ -157,10 +154,8 @@ RTCKernel::RTCGenerator RTCKernelRealComplexEven::generate_from_node(const LeafN
 
     size_t elems = std::accumulate(
         node.length.begin() + 1, node.length.end(), half_N * node.batch, std::multiplies<size_t>());
-    generator.gridDim
-        = {static_cast<unsigned int>(DivRoundingUp<size_t>(elems, LAUNCH_BOUNDS_R2C_C2R_KERNEL)),
-           1,
-           1};
+    generator.gridDim.x
+        = static_cast<unsigned int>(DivRoundingUp<size_t>(elems, LAUNCH_BOUNDS_R2C_C2R_KERNEL));
 
     generator.blockDim = {LAUNCH_BOUNDS_R2C_C2R_KERNEL, 1, 1};
 
@@ -181,8 +176,8 @@ RTCKernel::RTCGenerator RTCKernelRealComplexEven::generate_from_node(const LeafN
 
     generator.construct_rtckernel = [=](const std::string&       kernel_name,
                                         const std::vector<char>& code,
-                                        dim3                     gridDim,
-                                        dim3                     blockDim) {
+                                        gridDim3                     gridDim,
+                                        blockDim3                     blockDim) {
         return std::unique_ptr<RTCKernel>(
             new RTCKernelRealComplexEven(kernel_name, half_N, code, gridDim, blockDim));
     };
@@ -271,7 +266,9 @@ RTCKernel::RTCGenerator RTCKernelRealComplexEvenTranspose::generate_from_node(
     if(gridY < (1U << 16) && gridZ < (1U << 16))
     {
         // grid sizes are within limits to use a 3-D grid of GPUs
-        generator.gridDim = {gridX, gridY, gridZ};
+        generator.gridDim.x = gridX;
+        generator.gridDim.y = gridY;
+        generator.gridDim.z = gridZ;
         grid3D            = true;
     }
     else
@@ -279,13 +276,11 @@ RTCKernel::RTCGenerator RTCKernelRealComplexEvenTranspose::generate_from_node(
         // grid sizes exceed (1U << 16) - 1 limits, then use a 1-D grid,
         // a natural remap to a 3-D grid is then performed when creating the kernel source code
         size_t elems      = gridX_1d * gridY * gridZ;
-        generator.gridDim = {
-            static_cast<unsigned int>(DivRoundingUp<size_t>(elems, LAUNCH_BOUNDS_R2C_C2R_KERNEL)),
-            1,
-            1};
+        generator.gridDim = static_cast<unsigned int>(DivRoundingUp<size_t>(elems, LAUNCH_BOUNDS_R2C_C2R_KERNEL));
     }
 
-    generator.blockDim = {tileX, tileY, 1};
+    generator.blockDim.x = tileX;
+    generator.blockDim.y = tileY;
 
     RealComplexEvenTransposeSpecs specs{{node.scheme,
                                          node.length.size(),
@@ -305,8 +300,8 @@ RTCKernel::RTCGenerator RTCKernelRealComplexEvenTranspose::generate_from_node(
 
     generator.construct_rtckernel = [=](const std::string&       kernel_name,
                                         const std::vector<char>& code,
-                                        dim3                     gridDim,
-                                        dim3                     blockDim) {
+                                        gridDim3                     gridDim,
+                                        blockDim3                     blockDim) {
         return std::unique_ptr<RTCKernel>(
             new RTCKernelRealComplexEvenTranspose(kernel_name, code, gridDim, blockDim));
     };

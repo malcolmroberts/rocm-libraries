@@ -225,7 +225,7 @@ RTCKernel::RTCGenerator RTCKernelStockham::generate_from_node(const LeafNode&   
     };
 
     generator.construct_rtckernel
-        = [](const std::string& kernel_name, const std::vector<char>& code, dim3, dim3) {
+        = [](const std::string& kernel_name, const std::vector<char>& code, gridDim3, blockDim3) {
               return std::unique_ptr<RTCKernel>(new RTCKernelStockham(kernel_name, code));
           };
     return generator;

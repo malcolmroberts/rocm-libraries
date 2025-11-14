@@ -31,6 +31,7 @@
 #include <vector>
 
 #include "../../../shared/rocfft_complex.h"
+#include "../../../shared/device_properties.h"
 #include "../device/kernels/callback.h"
 #include "rtc_generator.h"
 
@@ -123,8 +124,8 @@ struct RTCKernel
     // named kernel
     RTCKernel(const std::string&       kernel_name,
               const std::vector<char>& code,
-              dim3                     gridDim  = {},
-              dim3                     blockDim = {});
+              gridDim3                     gridDim  = {},
+              blockDim3                     blockDim = {});
 
     virtual ~RTCKernel()
     {
@@ -143,14 +144,14 @@ struct RTCKernel
     void launch(DeviceCallIn& data, const hipDeviceProp_t& deviceProp);
     // direct launch with kernel args
     void launch(RTCKernelArgs&         kargs,
-                dim3                   gridDim,
-                dim3                   blockDim,
+                gridDim3                   gridDim,
+                blockDim3                   blockDim,
                 unsigned int           lds_bytes,
                 const hipDeviceProp_t& deviceProp,
                 hipStream_t            stream = nullptr);
 
     // normal launch from within rocFFT execution plan
-    bool get_occupancy(dim3 blockDim, unsigned int lds_bytes, int& occupancy);
+    bool get_occupancy(blockDim3 blockDim, unsigned int lds_bytes, int& occupancy);
 
 #ifndef ROCFFT_DEBUG_GENERATE_KERNEL_HARNESS
     // Subclasses implement this - each kernel type has different
@@ -160,14 +161,14 @@ struct RTCKernel
 
     // function to construct the correct RTCKernel object, given a kernel name and its compiled code
     using rtckernel_construct_t = std::function<std::unique_ptr<RTCKernel>(
-        const std::string&, const std::vector<char>&, dim3, dim3)>;
+        const std::string&, const std::vector<char>&, gridDim3, blockDim3)>;
 
     // grid parameters for this kernel.  may be set by runtime
     // compilation, if compilation of this kernel type knows how to.
     // Otherwise, TreeNode::SetupGridParam_internal will do it
     // later.
-    dim3 gridDim;
-    dim3 blockDim;
+    gridDim3 gridDim;
+    blockDim3 blockDim;
 
     std::string kernel_name;
 
@@ -191,8 +192,8 @@ protected:
 
         // if known at compile time, the grid parameters of the kernel
         // to launch with
-        dim3 gridDim;
-        dim3 blockDim;
+        gridDim3 gridDim;
+        blockDim3 blockDim;
     };
 #endif
 

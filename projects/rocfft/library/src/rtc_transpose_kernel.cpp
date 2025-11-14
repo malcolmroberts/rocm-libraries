@@ -56,17 +56,20 @@ RTCKernel::RTCGenerator RTCKernelTranspose::generate_from_node(const LeafNode&  
     if(gridY < (1U << 16) && gridZ < (1U << 16))
     {
         // grid sizes are within limits to use a 3-D grid of GPUs
-        generator.gridDim = {gridX, gridY, gridZ};
+        generator.gridDim.x = gridX;
+        generator.gridDim.y = gridY;
+        generator.gridDim.z = gridZ;
         grid3D            = true;
     }
     else
     {
         // grid sizes exceed (1U << 16) - 1 limits, then use a 1-D grid,
         // a natural remap to a 3-D grid is then performed when creating the kernel source code
-        generator.gridDim = {gridX * gridY * gridZ, 1, 1};
+        generator.gridDim.x = gridX * gridY * gridZ;
     }
 
-    generator.blockDim = {tileX, tileY};
+    generator.blockDim.x = tileX;
+    generator.blockDim.y = tileY;
 
     size_t largeTwdSteps = 0;
     if(node.large1D > (size_t)256 * 256 * 256 * 256)
@@ -112,8 +115,8 @@ RTCKernel::RTCGenerator RTCKernelTranspose::generate_from_node(const LeafNode&  
 
     generator.construct_rtckernel = [=](const std::string&       kernel_name,
                                         const std::vector<char>& code,
-                                        dim3                     gridDim,
-                                        dim3                     blockDim) {
+                                        gridDim3                     gridDim,
+                                        blockDim3                     blockDim) {
         return std::unique_ptr<RTCKernel>(
             new RTCKernelTranspose(kernel_name, code, gridDim, blockDim));
     };

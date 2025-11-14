@@ -27,8 +27,8 @@ struct RTCKernelTranspose : public RTCKernel
 {
     RTCKernelTranspose(const std::string&       kernel_name,
                        const std::vector<char>& code,
-                       dim3                     gridDim,
-                       dim3                     blockDim)
+                       gridDim3                     gridDim,
+                       blockDim3                     blockDim)
         : RTCKernel(kernel_name, code, gridDim, blockDim)
     {
     }

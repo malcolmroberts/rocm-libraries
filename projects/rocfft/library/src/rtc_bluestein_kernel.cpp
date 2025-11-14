@@ -50,14 +50,14 @@ RTCKernel::RTCGenerator RTCKernelBluesteinSingle::generate_from_node(const LeafN
     // allocate enough blocks for all higher dims + batch
     unsigned int batch_accum = product(node.length.begin() + 1, node.length.end()) * node.batch;
     auto         bwd         = config.transforms_per_block;
-    generator.gridDim        = {DivRoundingUp(batch_accum, bwd)};
-    generator.blockDim       = config.workgroup_size;
+    generator.gridDim.x        = DivRoundingUp(batch_accum, bwd);
+    generator.blockDim.x       = config.workgroup_size;
 
     BluesteinSingleSpecs specs{static_cast<unsigned int>(node.length[0]),
                                static_cast<unsigned int>(node.length.size()),
                                factors,
                                static_cast<unsigned int>(config.threads_per_transform[0])
-                                   * config.transforms_per_block,
+                               * config.transforms_per_block,
                                static_cast<unsigned int>(config.threads_per_transform[0]),
                                node.direction,
                                node.precision,
@@ -75,8 +75,8 @@ RTCKernel::RTCGenerator RTCKernelBluesteinSingle::generate_from_node(const LeafN
 
     generator.construct_rtckernel = [=](const std::string&       kernel_name,
                                         const std::vector<char>& code,
-                                        dim3                     gridDim,
-                                        dim3                     blockDim) {
+                                        gridDim3                     gridDim,
+                                        blockDim3                     blockDim) {
         return std::unique_ptr<RTCKernel>(
             new RTCKernelBluesteinSingle(kernel_name, code, gridDim, blockDim));
     };
@@ -155,15 +155,15 @@ RTCKernel::RTCGenerator RTCKernelBluesteinMulti::generate_from_node(const LeafNo
 
     if(scheme == CS_KERNEL_CHIRP)
     {
-        generator.gridDim
-            = {static_cast<unsigned int>((M - N) / LAUNCH_BOUNDS_BLUESTEIN_MULTI_KERNEL + 1)};
-        generator.blockDim = {LAUNCH_BOUNDS_BLUESTEIN_MULTI_KERNEL};
+        generator.gridDim.x
+            = static_cast<unsigned int>((M - N) / LAUNCH_BOUNDS_BLUESTEIN_MULTI_KERNEL + 1);
+        generator.blockDim.x = LAUNCH_BOUNDS_BLUESTEIN_MULTI_KERNEL;
     }
     else
     {
-        generator.gridDim
-            = {(static_cast<unsigned int>(count) - 1) / LAUNCH_BOUNDS_BLUESTEIN_MULTI_KERNEL + 1};
-        generator.blockDim = {LAUNCH_BOUNDS_BLUESTEIN_MULTI_KERNEL};
+        generator.gridDim.x
+            = (static_cast<unsigned int>(count) - 1) / LAUNCH_BOUNDS_BLUESTEIN_MULTI_KERNEL + 1;
+        generator.blockDim.x = LAUNCH_BOUNDS_BLUESTEIN_MULTI_KERNEL;
     }
 
     BluesteinMultiSpecs specs{scheme,
@@ -181,8 +181,8 @@ RTCKernel::RTCGenerator RTCKernelBluesteinMulti::generate_from_node(const LeafNo
 
     generator.construct_rtckernel = [=](const std::string&       kernel_name,
                                         const std::vector<char>& code,
-                                        dim3                     gridDim,
-                                        dim3                     blockDim) {
+                                        gridDim3                     gridDim,
+                                        blockDim3                     blockDim) {
         return std::unique_ptr<RTCKernel>(new RTCKernelBluesteinMulti(
             kernel_name, scheme, N, M, numof, count, code, gridDim, blockDim));
     };

@@ -934,8 +934,8 @@ void SBRCTransXY_ZNode::SetupGridParam_internal(GridParam& gp)
     bwd         = kernel.transforms_per_block;
     wgs         = kernel.workgroup_size;
     lds         = length[0] * bwd;
-    gp.b_x      = DivRoundingUp(length[2], bwd) * length[1] * batch;
-    gp.wgs_x    = wgs;
+    gp.blockDimX      = DivRoundingUp(length[2], bwd) * length[1] * batch;
+    gp.gridDimX    = wgs;
 }
 
 /*****************************************************
@@ -949,8 +949,8 @@ void SBRCTransZ_XYNode::SetupGridParam_internal(GridParam& gp)
     bwd         = kernel.transforms_per_block;
     wgs         = kernel.workgroup_size;
     lds         = length[0] * bwd;
-    gp.b_x      = DivRoundingUp(length[1], bwd) * length[2] * batch;
-    gp.wgs_x    = wgs;
+    gp.blockDimX      = DivRoundingUp(length[1], bwd) * length[2] * batch;
+    gp.gridDimX    = wgs;
 }
 
 /*****************************************************
@@ -966,8 +966,8 @@ void RealCmplxTransZ_XYNode::SetupGridParam_internal(GridParam& gp)
     // this kernel always does real-complex processing and needs one
     // extra element per row
     lds      = (length[0] + 1) * bwd;
-    gp.b_x   = DivRoundingUp(length[1], bwd) * length[2] * batch;
-    gp.wgs_x = wgs;
+    gp.blockDimX   = DivRoundingUp(length[1], bwd) * length[2] * batch;
+    gp.gridDimX = wgs;
 }
 
 bool RealCmplxTransZ_XYNode::CreateDevKernelArgs()

@@ -904,8 +904,8 @@ void Stockham1DNode::SetupGridParam_internal(GridParam& gp)
 
     bwd      = kernel.transforms_per_block;
     wgs      = kernel.workgroup_size;
-    gp.b_x   = (batch_accum + bwd - 1) / bwd;
-    gp.wgs_x = wgs;
+    gp.blockDimX   = (batch_accum + bwd - 1) / bwd;
+    gp.gridDimX = wgs;
 
     // we don't even need lds (kernel_1,2,3,4,5,6,7,10,11,13,17) since we don't use them at all
     // TODO: we can even use swizzle to do the butterfly shuffle if threads_per_transform[0] <= warpSize
@@ -953,8 +953,8 @@ void StockhamPP1DNode::SetupGridParam_internal(GridParam& gp)
 
     bwd      = kernel.transforms_per_block;
     wgs      = kernel.workgroup_size;
-    gp.b_x   = (batch_accum + bwd - 1) / bwd;
-    gp.wgs_x = wgs;
+    gp.blockDimX   = (batch_accum + bwd - 1) / bwd;
+    gp.gridDimX = wgs;
 
     const auto lds_padding = ebtype != EmbeddedType::NONE ? 1 : 0;
 
@@ -1131,9 +1131,9 @@ void SBCCNode::SetupGridParam_internal(GridParam& gp)
 
     lds = length[0] * bwd;
 
-    gp.b_x = ((length[1]) - 1) / bwd + 1;
-    gp.b_x *= product(length.begin() + 2, length.end()) * batch;
-    gp.wgs_x = wgs;
+    gp.blockDimX = ((length[1]) - 1) / bwd + 1;
+    gp.blockDimX *= product(length.begin() + 2, length.end()) * batch;
+    gp.gridDimX = wgs;
 }
 
 std::vector<size_t> SBCCNode::CollapsibleDims()
@@ -1161,16 +1161,16 @@ void SBCCPPNode::SetupGridParam_internal(GridParam& gp)
 
     lds = length[0] * bwd;
 
-    gp.b_x = ((length[1]) - 1) / bwd + 1;
-    gp.b_x *= product(length.begin() + 2, length.end()) * batch;
-    gp.wgs_x = wgs;
+    gp.blockDimX = ((length[1]) - 1) / bwd + 1;
+    gp.blockDimX *= product(length.begin() + 2, length.end()) * batch;
+    gp.gridDimX = wgs;
 
     // Grid arrangement is different than regular SBCC
     // for improved global memory access patterns.
     auto factor = *std::max_element(kernelFactorsPP.begin(), kernelFactorsPP.end());
 
-    gp.b_x /= factor;
-    gp.wgs_x *= factor;
+    gp.blockDimX /= factor;
+    gp.gridDimX *= factor;
     lds *= factor;
 }
 
@@ -1276,9 +1276,9 @@ void SBRCNode::SetupGridParam_internal(GridParam& gp)
     bwd         = kernel.transforms_per_block;
     wgs         = kernel.workgroup_size;
     lds         = length[0] * bwd;
-    gp.b_x      = (length[1] - 1) / bwd + 1;
-    gp.b_x *= product(length.begin() + 2, length.end()) * batch;
-    gp.wgs_x = wgs;
+    gp.blockDimX      = (length[1] - 1) / bwd + 1;
+    gp.blockDimX *= product(length.begin() + 2, length.end()) * batch;
+    gp.gridDimX = wgs;
 }
 
 SBRC_TRANSPOSE_TYPE SBRCNode::sbrc_transpose_type(unsigned int blockWidth) const
@@ -1395,9 +1395,9 @@ void SBCRNode::SetupGridParam_internal(GridParam& gp)
     const auto lds_padding = ebtype != EmbeddedType::NONE ? 1 : 0;
 
     lds    = (length[0] + lds_padding) * bwd;
-    gp.b_x = ((length[1]) - 1) / bwd + 1;
-    gp.b_x *= product(length.begin() + 2, length.end()) * batch;
-    gp.wgs_x = wgs;
+    gp.blockDimX = ((length[1]) - 1) / bwd + 1;
+    gp.blockDimX *= product(length.begin() + 2, length.end()) * batch;
+    gp.gridDimX = wgs;
 
     return;
 }
