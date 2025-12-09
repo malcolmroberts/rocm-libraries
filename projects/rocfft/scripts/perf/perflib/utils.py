@@ -246,8 +246,8 @@ def find_slower_faster(outdirs, method, multitest, significance, ncompare,
         pvals.sort()
 
 
-        if(True):
-            pvals = stats.false_discovery_control(pvals, method='by')
+        if(False):
+            pvals = stats.false_discovery_control(pvals, method='bh')
         
             print(pvals)
         else:
