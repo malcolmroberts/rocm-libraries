@@ -162,7 +162,6 @@ def find_geomean(outdirs, verbose):
     import scipy
     return scipy.stats.mstats.gmean(ratios)
 
-
 def find_slower_faster(outdirs, method, multitest, significance, ncompare,
                        verbose):
     # Takes exactly two outdirs; the first is the reference, the
@@ -172,6 +171,8 @@ def find_slower_faster(outdirs, method, multitest, significance, ncompare,
 
     import statistics
 
+    import scipy
+    
     slower = []
     faster = []
 
@@ -180,7 +181,7 @@ def find_slower_faster(outdirs, method, multitest, significance, ncompare,
         return slower, faster, significance
 
     import numpy as np
-    import scipy
+    from scipy import stats
 
     token_p_measures = []
 
@@ -236,25 +237,40 @@ def find_slower_faster(outdirs, method, multitest, significance, ncompare,
     if multitest == "bonferroni" and ncompare > 0:
         new_significance /= ncompare
     if multitest == "bh":
+
+
         pvals = []
         for stuff in token_p_measures:
             pvals.append(stuff.pval)
 
         pvals.sort()
 
-        #print(pvals)
 
-        new_significance = None
+        if(True):
+            pvals = stats.false_discovery_control(pvals, method='by')
+        
+            print(pvals)
+        else:
+            new_significance = None
 
-        # Find the largest index
-        for idx, pval in enumerate(pvals):
-            j_alpha = (idx + 1) * significance / ncompare
-            if pval < j_alpha:
-                new_significance = pval
+            new_significance = 0
 
+            # Find the largest index
+            for idx, pval in enumerate(pvals):
+                j_alpha = (idx + 1) * significance / ncompare
+                #print(j_alpha)
+                if pval < j_alpha:
+                    if(pval > new_significance):
+                        new_significance = pval
+
+            print("new_significance:", new_significance)
+                
+
+            
         # if new_significance == None:
         #     print("Warning: didn't find cutoff alpha for bh multi-hypothesis testing")
-        #     new_significance = significance
+        #     sys.exit(1)
+        #     #new_significance = significance
 
     # Now that we have the new significance, decide on cases.
     for dat in token_p_measures:

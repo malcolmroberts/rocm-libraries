@@ -200,6 +200,7 @@ def command_test(arguments):
         print("slower:")
         for case in slower:
             print(case)
+        print("new significance cuttoff:", new_sig)
 
     nh1 = len(faster) + len(slower)
     nh0 = ncompare - nh1
