@@ -83,3 +83,29 @@ static size_t compute_ptrdiff(const std::vector<size_t>& length,
     s.push_back(dist);
     return compute_ptrdiff(l, s);
 }
+
+template <typename intT1,
+          class = typename std::enable_if<std::is_integral<intT1>::value>::type,
+          typename intT2,
+          class = typename std::enable_if<std::is_integral<intT2>::value>::type,
+          typename intT3,
+          class = typename std::enable_if<std::is_integral<intT3>::value>::type>
+static size_t compute_ptrdiff(const std::vector<intT1>& lower,
+                              const std::vector<intT2>& upper,
+                              const std::vector<intT3>& stride)
+{
+    // Uppers and lowers must have the same length:
+    if(lower.size() != upper.size())
+        throw std::runtime_error("Inconsistent upper/lower dimensions given to compute_ptrdiff");
+    for(size_t idx = 0; idx < lower.size(); ++idx)
+    {
+        if(upper[idx] < lower[idx])
+            throw std::runtime_error("Lower bound is greater than upper bound in compute_ptrdiff");
+    }
+    std::vector<size_t> length(upper.size());
+    for(size_t idx = 0; idx < lower.size(); ++idx)
+    {
+        length[idx] = upper[idx] - lower[idx];
+    }
+    return compute_ptrdiff(length, stride);
+}
