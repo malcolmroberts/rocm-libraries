@@ -80,9 +80,9 @@ inline void validate_or_throw(hipfftXtSubFormat subformat, const std::string& fu
     case HIPFFT_XT_FORMAT_OUTPUT:
         [[fallthrough]];
     case HIPFFT_XT_FORMAT_1D_INPUT_SHUFFLED:
-        return;
-    case HIPFFT_FORMAT_UNDEFINED:
         [[fallthrough]];
+    case HIPFFT_FORMAT_UNDEFINED:
+        return;
     default:
         throw std::invalid_argument("invalid/undefined subformat for " + func_name);
     }
@@ -338,14 +338,14 @@ INSTANTIATE_TEST_SUITE_P(hipfftxttest,
                              return name;
                          });
 
-struct hipfftxt_test_param_t
+struct hipfftxt_test_params_t
 {
-    hipfftxt_test_param_t(fft_transform_type  _dft_type,
-                          hipfftXtSubFormat   _input_desc_format,
-                          size_t              _ngpus,
-                          size_t              _batch,
-                          std::vector<size_t> _transform_lengths,
-                          fft_precision       _precision)
+    hipfftxt_test_params_t(fft_transform_type  _dft_type,
+                           hipfftXtSubFormat   _input_desc_format,
+                           size_t              _ngpus,
+                           size_t              _batch,
+                           std::vector<size_t> _transform_lengths,
+                           fft_precision       _precision)
         : dft_type(_dft_type)
         , input_desc_format(_input_desc_format)
         , ngpus(_ngpus)
@@ -354,20 +354,23 @@ struct hipfftxt_test_param_t
         , precision(_precision)
     {
         if(ngpus <= 1)
-            throw std::invalid_argument("hipfftxt_test_param_t: requires more than 1 GPU");
+            throw std::invalid_argument("hipfftxt_test_params_t: requires more than 1 GPU");
+        if(transform_lengths.empty() || transform_lengths.size() > 3)
+            throw std::invalid_argument(
+                "hipfftxt_test_params_t: transform_lengths must be non-empty and of rank <= 3");
         if(batch == 0
            || std::any_of(transform_lengths.begin(), transform_lengths.end(), [](const auto& l) {
                   return l == 0;
               }))
         {
             throw std::invalid_argument(
-                "hipfftxt_test_param_t: batch and transform lengths must be non-zero");
+                "hipfftxt_test_params_t: batch and transform lengths must be non-zero");
         }
-        validate_enums_or_throw("hipfftxt_test_param_t", dft_type, input_desc_format, precision);
+        validate_enums_or_throw("hipfftxt_test_params_t", dft_type, input_desc_format, precision);
         // precision can only be single or double for hipfftxt tests, so check that here.
         if(precision != fft_precision_single && precision != fft_precision_double)
             throw std::invalid_argument(
-                "hipfftxt_test_param_t: precision must be single or double for hipfftxt tests");
+                "hipfftxt_test_params_t: precision must be single or double for hipfftxt tests");
     }
     const fft_transform_type  dft_type;
     const hipfftXtSubFormat   input_desc_format;
@@ -376,14 +379,14 @@ struct hipfftxt_test_param_t
     const std::vector<size_t> transform_lengths;
     const fft_precision       precision;
 
-    inline int exec_dir() const
+    inline int hipfft_exec_dir() const
     {
         return is_fwd(dft_type) ? HIPFFT_FORWARD : HIPFFT_BACKWARD;
     }
 
     inline std::vector<size_t> logical_spans(fft_io io) const
     {
-        validate_or_throw(io, "hipfftxt_test_param_t::logical_spans");
+        validate_or_throw(io, "hipfftxt_test_params_t::logical_spans");
         auto ret = transform_lengths;
         if((dft_type == fft_transform_type_real_forward && io == fft_io_out)
            || (dft_type == fft_transform_type_real_inverse && io == fft_io_in))
@@ -395,20 +398,20 @@ struct hipfftxt_test_param_t
     {
         if(global_batch_idx >= batch)
             throw std::invalid_argument(
-                "hipfftxt_test_param_t::validate_global_batch_idx: global_batch_idx out of range");
+                "hipfftxt_test_params_t::validate_global_batch_idx: global_batch_idx out of range");
     }
 
     void validate_global_multi_idx(const std::vector<size_t>& global_multi_idx, fft_io io) const
     {
-        validate_or_throw(io, "hipfftxt_test_param_t::validate_global_multi_idx");
+        validate_or_throw(io, "hipfftxt_test_params_t::validate_global_multi_idx");
         const auto global_logical_span = logical_spans(io);
         if(global_multi_idx.size() != global_logical_span.size())
-            throw std::invalid_argument(
-                "hipfftxt_test_param_t::validate_global_multi_idx: global_multi_idx size mismatch");
+            throw std::invalid_argument("hipfftxt_test_params_t::validate_global_multi_idx: "
+                                        "global_multi_idx size mismatch");
         for(size_t dim = 0; dim < global_multi_idx.size(); ++dim)
         {
             if(global_multi_idx[dim] >= global_logical_span[dim])
-                throw std::invalid_argument("hipfftxt_test_param_t::validate_global_multi_idx: "
+                throw std::invalid_argument("hipfftxt_test_params_t::validate_global_multi_idx: "
                                             "global_multi_idx out of range for dimension "
                                             + std::to_string(dim));
         }
@@ -418,7 +421,7 @@ struct hipfftxt_test_param_t
                                       const std::vector<size_t>& global_multi_idx,
                                       fft_io                     io) const
     {
-        validate_or_throw(io, "hipfftxt_test_param_t::global_buffer_index");
+        validate_or_throw(io, "hipfftxt_test_params_t::global_buffer_index");
         validate_global_batch_idx(global_batch_idx);
         validate_global_multi_idx(global_multi_idx, io);
         const auto global_strides = default_strides(dft_type, placement(), io, transform_lengths);
@@ -433,7 +436,7 @@ struct hipfftxt_test_param_t
     inline std::pair<int, size_t> get_local_buffer_index(
         size_t global_batch_idx, const std::vector<size_t>& global_multi_idx, fft_io io) const
     {
-        validate_or_throw(io, "hipfftxt_test_param_t::get_local_buffer_index");
+        validate_or_throw(io, "hipfftxt_test_params_t::get_local_buffer_index");
         validate_global_batch_idx(global_batch_idx);
         validate_global_multi_idx(global_multi_idx, io);
         std::pair<int, size_t> ret; // (device index, local offset in corresponding device chunk)
@@ -457,12 +460,9 @@ struct hipfftxt_test_param_t
         }
         else
         {
-            if(global_multi_idx.size() < 2 || global_multi_idx.size() > 3)
+            if(global_multi_idx.size() == 1)
             {
-                throw std::runtime_error(
-                    "hipfftxt_test_param_t::get_local_buffer_index: test-side support for "
-                    "unbatched "
-                    "tranforms implemented only for 2D/3D transforms for now.");
+                throw std::runtime_error("No test-side support for 1D unbatched transforms yet.");
             }
             const auto   desc_format = io == fft_io_in ? input_desc_format : output_desc_format();
             const size_t split_dim
@@ -514,7 +514,7 @@ struct hipfftxt_test_param_t
 
     inline bool has_real_data_on(fft_io io) const
     {
-        validate_or_throw(io, "hipfftxt_test_param_t::has_real_data_on");
+        validate_or_throw(io, "hipfftxt_test_params_t::has_real_data_on");
         if(io == fft_io_in)
             return dft_type == fft_transform_type_real_forward;
         // io == fft_io_out
@@ -548,17 +548,17 @@ struct hipfftxt_test_param_t
 
     inline std::vector<size_t> global_strides(fft_io io) const
     {
-        validate_or_throw(io, "hipfftxt_test_param_t::global_strides");
+        validate_or_throw(io, "hipfftxt_test_params_t::global_strides");
         return default_strides(dft_type, placement(), io, transform_lengths);
     }
     inline size_t global_dist(fft_io io) const
     {
-        validate_or_throw(io, "hipfftxt_test_param_t::global_dist");
+        validate_or_throw(io, "hipfftxt_test_params_t::global_dist");
         return default_distance(dft_type, placement(), io, transform_lengths, batch);
     }
     inline size_t global_byte_size(fft_io io) const
     {
-        validate_or_throw(io, "hipfftxt_test_param_t::global_byte_size");
+        validate_or_throw(io, "hipfftxt_test_params_t::global_byte_size");
         std::vector<fft_io> relevant_ios = {io};
         if(placement() == fft_placement_inplace)
             relevant_ios.push_back(other(io));
@@ -592,7 +592,7 @@ struct hipfftxt_test_param_t
         return oss.str();
     }
 
-    friend std::ostream& operator<<(std::ostream& stream, const hipfftxt_test_param_t& params)
+    friend std::ostream& operator<<(std::ostream& stream, const hipfftxt_test_params_t& params)
     {
         stream << "precision: " << (params.precision == fft_precision_single ? "single" : "double")
                << ", "
@@ -629,9 +629,13 @@ struct hipfftxt_test_param_t
 
     inline hipfftXtSubFormat output_desc_format() const
     {
+        // Possible use case of HIPFFT_XT_FORMAT_1D_INPUT_SHUFFLED is unclear yet
+        // (to be investigated with cuFFT backend)
         switch(input_desc_format)
         {
         case HIPFFT_XT_FORMAT_INPUT:
+            [[fallthrough]];
+        case HIPFFT_XT_FORMAT_1D_INPUT_SHUFFLED:
             return HIPFFT_XT_FORMAT_OUTPUT;
         case HIPFFT_XT_FORMAT_OUTPUT:
             return HIPFFT_XT_FORMAT_INPUT;
@@ -639,21 +643,19 @@ struct hipfftxt_test_param_t
             return HIPFFT_XT_FORMAT_INPLACE_SHUFFLED;
         case HIPFFT_XT_FORMAT_INPLACE_SHUFFLED:
             return HIPFFT_XT_FORMAT_INPLACE;
-        case HIPFFT_XT_FORMAT_1D_INPUT_SHUFFLED:
-            throw std::runtime_error(
-                "Test-side support for HIPFFT_XT_FORMAT_1D_INPUT_SHUFFLED is not implemented yet");
         case HIPFFT_FORMAT_UNDEFINED:
-            [[fallthrough]];
+            return HIPFFT_FORMAT_UNDEFINED;
         default:
             throw std::runtime_error("Invalid value of input descriptor's format detected in "
-                                     "hipfftxt_test_param_t::output_desc_format()");
+                                     "hipfftxt_test_params_t::output_desc_format()");
         }
     }
 
     // Return true if the input_desc_format is a valid format for the transform of interest.
     // Notes:
     // - "validity" is defined by the existence of an implementation with cuFFT backend.
-    // - the cases below have been verified but may not be exhaustive.
+    // - the cases below have been verified but may not be exhaustive, e.g., unbatched 1D
+    //   cases are yet to be determined.q
     inline bool has_valid_input_format() const
     {
         if(batch == 1)
@@ -672,7 +674,7 @@ struct hipfftxt_test_param_t
                        || input_desc_format == HIPFFT_XT_FORMAT_INPLACE_SHUFFLED;
             default:
                 throw std::logic_error(
-                    "Unexpected dft_type in hipfftxt_test_param_t::has_valid_input_format()");
+                    "Unexpected dft_type in hipfftxt_test_params_t::has_valid_input_format()");
             }
         }
         else
@@ -699,7 +701,7 @@ private:
     {
         if(global_idx >= global_span)
             throw std::out_of_range(
-                "hipfftxt_test_param_t::get_device_index: global_idx out of range");
+                "hipfftxt_test_params_t::get_device_index: global_idx out of range");
         const auto min_span_per_dev = global_span / num_devices;
         const auto remainder        = global_span % num_devices;
         const auto split_global_idx = remainder * (min_span_per_dev + 1);
@@ -711,13 +713,13 @@ private:
 };
 
 // Parameters are real/complex, direction, format, dimension, and number of GPUs.
-class hipfftxtexec : public ::testing::TestWithParam<hipfftxt_test_param_t>
+class hipfftxtexec : public ::testing::TestWithParam<hipfftxt_test_params_t>
 {
 };
 
 static void verify_data_distribution(const hipfftLibXtDesc_wrapper_t& desc,
                                      const hostbuf&                   global_data,
-                                     const hipfftxt_test_param_t&     params)
+                                     const hipfftxt_test_params_t&    params)
 {
     const auto desc_subformat = static_cast<hipfftXtSubFormat>((*desc).subFormat);
     if(desc_subformat != params.input_desc_format && desc_subformat != params.output_desc_format())
@@ -844,8 +846,6 @@ TEST_P(hipfftxtexec, data_distribution_and_execution)
         const auto& params = GetParam();
         const auto  rank   = params.transform_lengths.size();
 
-        ASSERT_TRUE(rank == 2 || rank == 3) << "only 2D and 3D use cases supported in this test.";
-
         // Create FFTW reference for comparison
         reference_fft_data_t reference_results{params.make_params_for_reference_cpu()};
         if(params.expects_implementation() && reference_results.needs_computing())
@@ -905,6 +905,20 @@ TEST_P(hipfftxtexec, data_distribution_and_execution)
         {
             switch(rank)
             {
+            case 1:
+                hipfft_rt = hipfftMakePlan1d(plan,
+                                             params.transform_lengths[0],
+                                             params.hipfft_transform_type(),
+                                             1 /* unbatched case*/,
+                                             workSize.data());
+                if constexpr(rocfft_backend)
+                {
+                    ASSERT_EQ(hipfft_rt, HIPFFT_NOT_IMPLEMENTED)
+                        << "Unbatched multi-gpu 1D transforms should return not implemented";
+                    GTEST_SUCCEED();
+                    return;
+                }
+                break;
             case 2:
                 hipfft_rt = hipfftMakePlan2d(plan,
                                              params.transform_lengths[0],
@@ -952,7 +966,7 @@ TEST_P(hipfftxtexec, data_distribution_and_execution)
             {
                 // The parameters' I/O descriptor format is/are invalid (validity defined by
                 // what cuFFT supports) for the targeted transform, so hipfftXtMalloc is expected
-                // to fail. If not, hipfftxt_test_param_t::has_valid_input_format may needs to be
+                // to fail. If not, hipfftxt_test_params_t::has_valid_input_format may needs to be
                 // revised.
                 if(hipfft_rt == HIPFFT_SUCCESS)
                     throw std::logic_error(
@@ -1011,6 +1025,11 @@ TEST_P(hipfftxtexec, data_distribution_and_execution)
             GTEST_SUCCEED();
             return;
         }
+        if(params.batch == 1 && params.transform_lengths.size() == 1)
+        {
+            GTEST_SKIP() << "Skipping unbatched 1D transform test case (no test-side support yet)";
+            return;
+        }
 
         if(verbose > 2)
         {
@@ -1040,7 +1059,7 @@ TEST_P(hipfftxtexec, data_distribution_and_execution)
             std::cout << "Executing plan...\n";
         }
         // Execute the plan
-        hipfft_rt = hipfftXtExecDescriptor(plan, input_desc, output_desc, params.exec_dir());
+        hipfft_rt = hipfftXtExecDescriptor(plan, input_desc, output_desc, params.hipfft_exec_dir());
         ASSERT_EQ(hipfft_rt, HIPFFT_SUCCESS)
             << "hipfftXtExecDescriptor failed with code " << hipfft_rt << " ("
             << hipfftResult_string(hipfft_rt) << ")";
@@ -1103,11 +1122,12 @@ TEST_P(hipfftxtexec, data_distribution_and_execution)
 }
 
 // Note: order test parameters so that caching of reference results is leveraged
-static std::vector<hipfftxt_test_param_t> test_params_for_hipfftxt_execution_tests()
+static std::vector<hipfftxt_test_params_t> test_params_for_hipfftxt_execution_tests()
 {
-    std::vector<hipfftxt_test_param_t> params;
-    // Test-side support only for 2D/3D transforms, for now
-    const std::vector<std::vector<size_t>> test_lengths = {{32, 36}, {32, 36, 38}};
+    std::vector<hipfftxt_test_params_t> params;
+    // No test-side support for unbatched 1D transforms, for now: this is added for
+    // completeness (verification of error code returned by hipFFT with rocfft backend).
+    const std::vector<std::vector<size_t>> test_lengths = {{32, 36, 38}, {32, 36}, {1024}};
     for(const auto& dft_type : trans_type_range_full)
     {
         for(const auto& lengths : test_lengths)
@@ -1118,15 +1138,24 @@ static std::vector<hipfftxt_test_param_t> test_params_for_hipfftxt_execution_tes
                 // devices have some work to do
                 for(const auto& batch : {MAX_HIP_DESCRIPTOR_GPUS, 1})
                 {
-                    // some combos of test parameters are not supported/not implemented,
-                    // the test actually verifies
+                    // some test parameters have invalid input descriptor's subformat or
+                    // unimplemented support for it. The test consuming these parameters
+                    // actually verifies that by checking the various error codes returned
+                    // by hipFFT.
+                    // Note: feeding hipfftXtExecDescriptor an input descriptor with
+                    // HIPFFT_XT_FORMAT_OUTPUT as a subformat would serve no other purpose
+                    // than to verifying that the function rejects the arguments. Generalizing
+                    // the test to that end is not worth the effort. If ever considered critical,
+                    // the implementation of some adhoc test should be considered.
                     for(const auto& input_subformat : {HIPFFT_XT_FORMAT_INPLACE,
                                                        HIPFFT_XT_FORMAT_INPLACE_SHUFFLED,
-                                                       HIPFFT_XT_FORMAT_INPUT})
+                                                       HIPFFT_XT_FORMAT_INPUT,
+                                                       HIPFFT_XT_FORMAT_1D_INPUT_SHUFFLED,
+                                                       HIPFFT_FORMAT_UNDEFINED})
                     {
                         for(int ngpus = 2; ngpus <= rocfft_scoped_device::device_count(); ++ngpus)
                         {
-                            hipfftxt_test_param_t to_add(
+                            hipfftxt_test_params_t to_add(
                                 dft_type, input_subformat, ngpus, batch, lengths, precision);
                             const double roll = hash_prob(random_seed, to_add.str());
                             // multi-device uses only interleaved complex data layout for now,
