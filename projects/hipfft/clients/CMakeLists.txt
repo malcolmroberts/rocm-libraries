@@ -60,17 +60,6 @@ list( APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake )
 
 include( build-options )
 
-if(NOT (CMAKE_CXX_COMPILER MATCHES ".*hipcc$" OR
-        CMAKE_CXX_COMPILER MATCHES ".*clang\\+\\+" OR
-	CMAKE_CXX_COMPILER MATCHES ".*nvcc" OR
-	CMAKE_CXX_COMPILER MATCHES ".*nvc\\+\\+"
-  	)
-  )
-  if(BUILD_CLIENTS)
-    message( FATAL_ERROR "Using BUILD_CLIENTS=ON requires a compiler capable of building device code (hipcc, clang, nvcc, nvc++)." )
-  endif()
-endif()
-
 
 # This option only works for make/nmake and the ninja generators, but no reason it shouldn't be on
 # all the time

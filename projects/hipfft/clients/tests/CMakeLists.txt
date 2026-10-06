@@ -71,7 +71,29 @@ set( hipfft-test_source
   ../../shared/test_callbacks.cpp
   ../../shared/data_gen_device.cpp
   ${callback_embed_cpp}
-  )
+)
+
+set( hipfiles
+  gtest_main.cpp
+  hipfft_accuracy_test.cpp
+  simple_test.cpp
+  accuracy_test_1D.cpp
+  accuracy_test_2D.cpp
+  accuracy_test_3D.cpp
+  accuracy_test_callback.cpp
+  accuracy_test_emulation.cpp
+  hipfftw_test.cpp
+  multi_device_test.cpp
+  multi_stream_test.cpp
+  ../../shared/array_validator.cpp
+  ../../shared/test_callbacks.cpp
+  ../../shared/data_gen_device.cpp
+  ${callback_embed_cpp}
+)
+foreach( file ${hipfiles})
+  set_source_files_properties(${file} PROPERTIES LANGUAGE HIP)
+endforeach()
+
 
 add_executable( hipfft-test ${hipfft-test_source} ${hipfft-test_includes} )
 
