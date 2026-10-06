@@ -2115,7 +2115,8 @@ public:
     operator fft_params() const
     {
         fft_params ret;
-        ret.length         = convert_vector_to<decltype(ret.length)::value_type>(lengths);
+        using lengthType = decltype(ret.length)::value_type;
+        ret.length         = convert_vector_to<lengthType>(lengths);
         ret.precision      = prec;
         ret.placement      = plan_placement;
         ret.transform_type = dft_kind;
@@ -2125,8 +2126,10 @@ public:
         ret.nbatch        = batches[0];
         ret.run_callbacks = fft_callback_type_none;
         ret.scale_factor  = 1.0;
-        ret.istride       = convert_vector_to<decltype(ret.istride)::value_type>(istrides);
-        ret.ostride       = convert_vector_to<decltype(ret.ostride)::value_type>(ostrides);
+        using istrideType = decltype(ret.istride)::value_type;
+        ret.istride       = convert_vector_to<istrideType>(istrides);
+        using ostrideType = decltype(ret.ostride)::value_type;
+        ret.ostride       = convert_vector_to<ostrideType>(ostrides);
         if(idist[0] < 0 || odist[0] < 0)
             throw std::runtime_error("Conversion to fft_params impossible for negative distances");
         ret.idist = idist[0];

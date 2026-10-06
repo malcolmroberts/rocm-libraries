@@ -128,7 +128,7 @@ static hostbuf half_to_single_copy(const hostbuf& in)
     hostbuf out;
     out.alloc(2 * in.size());
     auto in_begin = reinterpret_cast<const rocfft_fp16*>(in.data());
-    std::copy_n(in_begin, in.size() / sizeof(rocfft_fp16), reinterpret_cast<float*>(out.data()));
+    std::ranges::copy_n(in_begin, in.size() / sizeof(rocfft_fp16), reinterpret_cast<float*>(out.data()));
     return out;
 }
 
@@ -141,7 +141,7 @@ void narrow_precision_inplace(hostbuf& in)
 
     auto readPtr  = reinterpret_cast<const TfloatIn*>(in.data());
     auto writePtr = reinterpret_cast<TfloatOut*>(in.data());
-    std::copy_n(readPtr, in.size() / sizeof(TfloatIn), writePtr);
+    std::ranges::copy_n(readPtr, in.size() / sizeof(TfloatIn), writePtr);
     in.shrink(in.size() / (sizeof(TfloatIn) / sizeof(TfloatOut)));
 }
 

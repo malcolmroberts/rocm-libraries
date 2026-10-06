@@ -90,7 +90,13 @@ set( hipfiles
   ../../shared/data_gen_device.cpp
   ${callback_embed_cpp}
 )
-foreach( file ${hipfiles})
+
+set( hip_device_files
+  ../../shared/data_gen_device.cpp
+  ../../shared/test_callbacks.cpp
+  ${callback_embed_cpp}
+)
+foreach( file ${hip_device_files} )
   set_source_files_properties(${file} PROPERTIES LANGUAGE HIP)
 endforeach()
 
@@ -282,15 +288,16 @@ foreach( target ${TEST_TARGETS} )
     target_include_directories( ${target} PRIVATE ${HIP_INCLUDE_DIRS})
 
     if( CMAKE_CXX_COMPILER MATCHES ".*nvc\\+\\+$" )
-      target_compile_options( ${target} PRIVATE -cuda -Xptxas=-w)
+      #target_compile_options( ${target} PRIVATE -cuda -Xptxas=-w)
       target_link_options( ${target} PRIVATE -cuda)
     else()
-      target_compile_options( ${target} PRIVATE -arch sm_100 -gencode=arch=compute_100,code=sm_100 -Xptxas=-w)
+      #target_compile_options( ${target} PRIVATE -arch sm_100 -gencode=arch=compute_100,code=sm_100 -Xptxas=-w)
     endif()
     if( NVHPC_FOUND )
       target_link_libraries( ${target}  PRIVATE NVHPC::CUDART )
     else()
       target_link_libraries( ${target}  PRIVATE CUDA::cudart )
+      target_link_libraries( ${target}  PRIVATE hip::host )
     endif()
     target_compile_definitions( ${target} PUBLIC _CUFFT_BACKEND )
   endif()
@@ -395,7 +402,6 @@ endif()
 
 # tests have callback functions, which need to be built as relocatable device code
 if( BUILD_WITH_LIB STREQUAL "CUDA" )
-  target_compile_options( hipfft-test PRIVATE -dc )
   # on CUDA, RTC callback code needs to be told where the CUDA includes are
   list( GET CUDAToolkit_INCLUDE_DIRS 0 HIPFFT_CUDA_INCLUDE )
   target_compile_definitions( hipfft-test PRIVATE HIPFFT_CUDA_INCLUDE=\"${HIPFFT_CUDA_INCLUDE}\" )
