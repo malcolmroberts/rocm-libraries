@@ -255,7 +255,6 @@ foreach( target ${TEST_TARGETS} )
     target_link_libraries( ${target}
       PRIVATE
       hip::host
-      hip::device
     )
   else()
     target_compile_definitions( ${target} PRIVATE __HIP_PLATFORM_NVIDIA__)
