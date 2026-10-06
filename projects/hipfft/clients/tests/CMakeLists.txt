@@ -20,7 +20,7 @@
 # THE SOFTWARE.
 # #############################################################################
 
-cmake_minimum_required( VERSION 3.16 )
+cmake_minimum_required( VERSION 3.25 )
 
 # This should appear before the project command, because it does not
 # use FORCE
@@ -31,6 +31,16 @@ else( )
   set( CMAKE_INSTALL_PREFIX "/opt/rocm" CACHE PATH
     "Install path prefix, prepended onto install directories" )
 endif( )
+
+# This has to be initialized before the project() command appears
+# Set the default of CMAKE_BUILD_TYPE to be release, unless user
+# specifies with -D.  MSVC_IDE does not use CMAKE_BUILD_TYPE
+if( NOT DEFINED CMAKE_CONFIGURATION_TYPES AND NOT DEFINED CMAKE_BUILD_TYPE )
+  set( CMAKE_BUILD_TYPE Release CACHE STRING
+    "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel." )
+endif()
+
+project( hipfft-clients-tests LANGUAGES CXX HIP )
 
 # Dependencies
 
@@ -55,7 +65,7 @@ add_custom_command(
   VERBATIM
 )
 
-set( hipfft-test_source
+set( hip_host_files
   gtest_main.cpp
   hipfft_accuracy_test.cpp
   simple_test.cpp
@@ -68,27 +78,6 @@ set( hipfft-test_source
   multi_device_test.cpp
   multi_stream_test.cpp
   ../../shared/array_validator.cpp
-  ../../shared/test_callbacks.cpp
-  ../../shared/data_gen_device.cpp
-  ${callback_embed_cpp}
-)
-
-set( hipfiles
-  gtest_main.cpp
-  hipfft_accuracy_test.cpp
-  simple_test.cpp
-  accuracy_test_1D.cpp
-  accuracy_test_2D.cpp
-  accuracy_test_3D.cpp
-  accuracy_test_callback.cpp
-  accuracy_test_emulation.cpp
-  hipfftw_test.cpp
-  multi_device_test.cpp
-  multi_stream_test.cpp
-  ../../shared/array_validator.cpp
-  ../../shared/test_callbacks.cpp
-  ../../shared/data_gen_device.cpp
-  ${callback_embed_cpp}
 )
 
 set( hip_device_files
@@ -100,8 +89,10 @@ foreach( file ${hip_device_files} )
   set_source_files_properties(${file} PROPERTIES LANGUAGE HIP)
 endforeach()
 
+set( hipfft-test_source ${hip_host_files} ${hip_device_files})
 
-add_executable( hipfft-test ${hipfft-test_source} ${hipfft-test_includes} )
+add_executable( hipfft-test ${hipfft-test_source} )
+set( TEST_TARGETS hipfft-test )
 
 # Link to runtime compilation library
 if( BUILD_WITH_LIB STREQUAL CUDA)
@@ -110,19 +101,6 @@ else()
   find_package( hiprtc REQUIRED CONFIG HINTS ${ROCM_PATH} )
   set( HIPFFT_RTC_LIB hiprtc::hiprtc )
 endif()
-
-set( TEST_TARGETS hipfft-test )
-
-
-# This has to be initialized before the project() command appears
-# Set the default of CMAKE_BUILD_TYPE to be release, unless user
-# specifies with -D.  MSVC_IDE does not use CMAKE_BUILD_TYPE
-if( NOT DEFINED CMAKE_CONFIGURATION_TYPES AND NOT DEFINED CMAKE_BUILD_TYPE )
-  set( CMAKE_BUILD_TYPE Release CACHE STRING
-    "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel." )
-endif()
-
-project( hipfft-clients-tests LANGUAGES CXX )
 
 if( NOT HIPFFT_BUILD_SCOPE )
   find_package( hipfft REQUIRED CONFIG PATHS )
@@ -246,10 +224,10 @@ foreach( target ${TEST_TARGETS} )
     )
 
   if( BUILD_CLIENTS_TESTS_OPENMP )
-    set_target_properties( ${TEST_TARGETS} PROPERTIES
+    set_target_properties( ${target} PROPERTIES
        BUILD_RPATH "${BUILD_RPATH}"
     )
-    set_target_properties( ${TEST_TARGETS} PROPERTIES
+    set_target_properties( ${target} PROPERTIES
       INSTALL_RPATH "${INSTALL_RPATH}"
     )
   endif()
@@ -279,10 +257,6 @@ foreach( target ${TEST_TARGETS} )
       hip::host
       hip::device
     )
-    foreach( gpu_target ${GPU_TARGETS} )
-      target_compile_options( ${target} PRIVATE --offload-arch=${gpu_target} )
-    endforeach()
-
   else()
     target_compile_definitions( ${target} PRIVATE __HIP_PLATFORM_NVIDIA__)
     target_include_directories( ${target} PRIVATE ${HIP_INCLUDE_DIRS})
@@ -426,7 +400,6 @@ if( TARGET hipfftw )
 endif()
 
 if (WIN32)
-
   # Ensure tests run with HIP DLLs and not anything the driver owns
   # in system32.  Libraries like amdhip64.dll are also in the HIP
   # runtime, and we need run with those.  But the only way to make a
@@ -481,5 +454,4 @@ if (BUILD_CODE_COVERAGE)
     COMMAND ${LLVM_COV} export -object ./library/libhipfftw.so -object ./library/libhipfft.so -instr-profile=./coverage-report/hipfft.profdata -format=lcov > ./coverage-report/coverage.info
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
   )
-
 endif()
