@@ -20,7 +20,7 @@
 # THE SOFTWARE.
 # #############################################################################
 
-CMAKE_MINIMUM_REQUIRED(VERSION 3.21)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.25)
 
 project( hipfft-clients-bench LANGUAGES CXX HIP )
 
@@ -73,15 +73,14 @@ else()
   )
 endif()
 
-if((NOT CMAKE_CXX_COMPILER MATCHES ".*/hipcc$")
-    OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+if( CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
   if( NOT BUILD_WITH_LIB STREQUAL "CUDA" )
     if( WIN32 )
       find_package( HIP CONFIG REQUIRED )
     else()
       find_package( HIP REQUIRED )
     endif()
-    target_link_libraries( hipfft-bench PRIVATE hip::host hip::device hip:hipfft  )
+    target_link_libraries( hipfft-bench PRIVATE hip::host hip::device  )
   else()
     target_compile_definitions( hipfft-bench PRIVATE __HIP_PLATFORM_NVIDIA__)
     target_include_directories( hipfft-bench PRIVATE

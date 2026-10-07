@@ -203,8 +203,15 @@ string( CONCAT TESTS_OUT_DIR "${PROJECT_BINARY_DIR}" ${TESTS_OUT_DIR} )
 
 option( BUILD_CLIENTS_TESTS_OPENMP "Build tests with OpenMP" ON )
 if( BUILD_CLIENTS_TESTS_OPENMP AND NOT BUILD_WITH_LIB STREQUAL "CUDA" )
-  # Attempt to find a config version, which provides openmp_LIB_DIR.
-  find_package( OpenMP CONFIG QUIET PATHS "${HIP_CLANG_ROOT}/lib/cmake" )
+  # The ROCm clang OpenMP config package exports clang's resource
+  # include dir (.../lib/clang/N/include), which breaks non-clang host
+  # compilers.  Only use it when the host compiler is clang; otherwise
+  # fall through to module-mode FindOpenMP (e.g. libgomp for g++).
+  if( CMAKE_CXX_COMPILER_ID STREQUAL "Clang" )     
+    # Attempt to find a config version, which provides openmp_LIB_DIR.
+    find_package( OpenMP CONFIG QUIET PATHS "${HIP_CLANG_ROOT}/lib/cmake" )
+  endif()
+
   if( NOT OpenMP_FOUND OR NOT DEFINED openmp_LIB_DIR )
      # Fall-back to module mode.
      find_package( OpenMP MODULE REQUIRED )

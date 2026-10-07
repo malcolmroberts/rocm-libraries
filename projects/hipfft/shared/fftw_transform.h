@@ -141,7 +141,10 @@ void narrow_precision_inplace(hostbuf& in)
 
     auto readPtr  = reinterpret_cast<const TfloatIn*>(in.data());
     auto writePtr = reinterpret_cast<TfloatOut*>(in.data());
-    std::ranges::copy_n(readPtr, in.size() / sizeof(TfloatIn), writePtr);
+    // NB: std::copy_n, not std::ranges::copy_n -- the latter's
+    // indirectly_writable concept rejects a _Float16 output under
+    // libstdc++, so the ranges form fails to compile with g++.
+    std::copy_n(readPtr, in.size() / sizeof(TfloatIn), writePtr);      
     in.shrink(in.size() / (sizeof(TfloatIn) / sizeof(TfloatOut)));
 }
 

@@ -622,8 +622,8 @@ static void generate_random_planar_data(std::vector<hostbuf>&      input,
                 // brick index to write to
                 auto write_idx = compute_index(index, whole_stride, i_base);
 
-                const rocfft_complex<Tfloat> val((float)gen() / (float)gen.max(),
-                                                 (float)gen() / (float)gen.max());
+                const rocfft_complex<Tfloat> val(static_cast<Tfloat>((float)gen() / (float)gen.max()),
+                                                 static_cast<Tfloat>((float)gen() / (float)gen.max()));
                 const Tfloat                 offset = 0.5;
                 ireal[write_idx]                    = val.real() - offset;
                 iimag[write_idx]                    = val.imag() - offset;

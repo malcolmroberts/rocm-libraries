@@ -20,7 +20,7 @@
 # THE SOFTWARE.
 # #############################################################################
 
-CMAKE_MINIMUM_REQUIRED( VERSION 3.21 )
+CMAKE_MINIMUM_REQUIRED( VERSION 3.25 )
 
 project( hipfft-clients-samples-rocfft LANGUAGES CXX HIP )
 
@@ -132,6 +132,9 @@ if( hipfft_callback IN_LIST sample_list )
   if( BUILD_WITH_LIB STREQUAL "CUDA" )
     target_compile_options( hipfft_callback PRIVATE -dc )
   else()
+    set_source_files_properties( hipfft_callback.cpp PROPERTIES LANGUAGE HIP )
+    set_target_properties( hipfft_callback PROPERTIES HIP_STANDARD 20 HIP_STANDARD_REQUIRED ON )
+    target_link_libraries( hipfft_callback PRIVATE hip::device )
     # -fgpu-rdc causes failure at link stage on Windows
     if (NOT WIN32)
       target_compile_options( hipfft_callback PRIVATE -fgpu-rdc )
