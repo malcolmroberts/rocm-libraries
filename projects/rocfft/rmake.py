@@ -282,6 +282,11 @@ def run_cmd(exe, opts):
 
 
 def main():
+    print(
+        "WARNING: rmake.py is deprecated and will be removed in a future release. "
+        "Use cmake directly to build rocFFT.",
+        file=sys.stderr,
+    )
     global args
     os_detect()
     args = parse_args()

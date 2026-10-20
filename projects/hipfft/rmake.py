@@ -198,6 +198,11 @@ def run_cmd(exe, opts):
     return proc.returncode
 
 def main():
+    print(
+        "WARNING: rmake.py is deprecated and will be removed in a future release. "
+        "Use cmake directly to build hipFFT.",
+        file=sys.stderr,
+    )
     global args
     os_detect()
     args = parse_args()

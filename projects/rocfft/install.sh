@@ -245,6 +245,8 @@ install_packages( )
 # Exit code 1: problems with getopt
 # Exit code 2: problems with supported platforms
 
+echo "WARNING: install.sh is deprecated and will be removed in a future release. Use cmake directly to build rocFFT." >&2
+
 # check if getopt command is installed
 type getopt > /dev/null
 if [[ $? -ne 0 ]]; then
